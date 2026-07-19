@@ -1,0 +1,136 @@
+Week-5
+
+Q1: What are the key limitations of traditional MapReduce that make Spark a preferred choice for 
+modern big data processing?
+Answer:
+-MapReduce stores intermediate results on disk, making it slow.
+- It is not suitable for iterative algorithms like machine learning.
+-Writing MapReduce programs is complex.
+- It has high latency for real-time processing.
+Spark Advantages:
+- In-memory processing
+- Faster execution (up to 100× faster in memory)
+- Easy APIs (Python, Scala, Java, R)
+- Supports SQL, Streaming, MLlib, and GraphX
+
+Q2: Explain how Spark uses In-Memory Computing to speed up iterative machine learning algorithms compared 
+to disk-based systems.
+Answer: Spark stores intermediate data in RAM instead of writing it to disk after every
+operation. Machine learning algorithms repeatedly process the same data, so keeping it
+in memory avoids repeated disk I/O, resulting in much faster execution.
+
+Q3: Write a code snippet to remove all duplicate rows from a DataFrame based on a specific set of 
+columns: user_id and transaction_date.
+Answer:  df = df.dropDuplicates(["user_id", "transaction_date"])
+
+Q4: Given a DataFrame df_sales, write a query to filter for rows where the region is 'West' and then 
+group by product_category to find the average sale_amount.
+Answer:
+from pyspark.sql.functions import avg, col
+df_sales.filter(
+    col("region") == "West"
+).groupBy("product_category").agg(
+    avg("sale_amount").alias("Average Sale")
+).show()
+
+Q5: What is the difference between .na.drop() and .na.fill()? Provide a code example of filling 
+null values in a status column with the string 'Unknown'.
+.na.drop() removes rows containing null values.
+.na.fill() replaces null values with a specified value.
+Example: 
+df = df.na.fill({
+    "status": "Unknown"
+})
+
+Q6: Write a query to find the total count of records for each city in a DataFrame, but only for cities
+where the count is greater than 100.
+Answer: 
+from pyspark.sql.functions import count
+df.groupBy("city").agg(
+    count("*").alias("Total Count")
+).filter(
+    col("Total Count") > 100
+).show()
+
+Q7: How does the immutability of Spark DataFrames affect how you perform "data cleaning" steps like dropping columns 
+or renaming them?
+Answer: Spark DataFrames are immutable, meaning they cannot be modified directly. Every cleaning operation 
+(such as dropping or renaming columns) creates a new DataFrame, leaving the original unchanged
+Example:
+df = df.drop("Age")
+df = df.withColumnRenamed("Name", "Customer_Name")
+
+Q8: Write a Spark command to filter a dataset for rows where the age is between 18 and 30 (inclusive) and the
+subscription is 'Premium'.
+Answer: df.filter(
+    (col("age") >= 18) &
+    (col("age") <= 30) &
+    (col("subscription") == "Premium")
+).show()
+
+Q9: When cleaning a dataset, why is it often better to handle null values before performing mathematical aggregations
+like sum() or avg()?
+Answer: Handling null values before using sum() or avg() ensures accurate calculations, prevents unexpected results,
+and improves data quality.
+
+Q10: Write the code to revise a column named raw_timestamp by casting it to a TimestampType and renaming it to event_time.
+Answer:
+from pyspark.sql.functions import col
+from pyspark.sql.types import TimestampType
+df = df.withColumn(
+    "raw_timestamp",
+    col("raw_timestamp").cast(TimestampType())
+)
+df = df.withColumnRenamed(
+    "raw_timestamp",
+    "event_time"
+)
+
+Q11: Explain the "Shuffle" process that occurs during a grouping operation. Why is it considered a wide transformation?
+Answer:A shuffle occurs when Spark redistributes data across partitions during operations like groupBy(), join(), 
+or distinct(). 
+Since data moves between partitions over the network, it is considered a wide transformation and is more expensive 
+than narrow transformations.
+
+Q12: Write a code snippet that identifies and removes rows where the email column contains null values OR the username 
+is an empty string.
+Answer: 
+df = df.filter(
+    col("email").isNotNull() &
+    (col("username") != "")
+)
+df.show()
+
+Q13: How do you use the .agg() function to calculate multiple statistics at once, such as the min, max, and mean 
+of the price column?
+Answer:
+from pyspark.sql.functions import min, max, avg
+df.agg(
+    min("price").alias("Minimum Price"),
+    max("price").alias("Maximum Price"),
+    avg("price").alias("Average Price")
+).show()
+
+Q14: In the context of cleaning a dataset, what is the risk of using inferSchema=true when your source data 
+contains messy or
+inconsistent date formats?
+Answer: If the dataset contains inconsistent date formats, inferSchema=true may infer the wrong data type 
+or treat dates as strings, leading to parsing errors and incorrect analysis. It is safer to define the schema explicitly or 
+clean the data before casting.
+
+Q15: Write a final processing pipeline that:
+1.Filters out duplicates.
+2.Fills null prices with 0.
+3.Groups by store_id to calculate total revenue.
+Answer:
+from pyspark.sql.functions import sum
+pipeline = (
+    df
+    .dropDuplicates()
+    .na.fill({"price": 0})
+    .groupBy("store_id")
+    .agg(
+        sum("price").alias("Total Revenue")
+    )
+)
+pipeline.show()
